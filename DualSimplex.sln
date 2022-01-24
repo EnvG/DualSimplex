@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DualSimplex", "DualSimplex\DualSimplex.csproj", "{3BA77A6C-2B54-42B0-AAD0-1653F038D112}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3BA77A6C-2B54-42B0-AAD0-1653F038D112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BA77A6C-2B54-42B0-AAD0-1653F038D112}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BA77A6C-2B54-42B0-AAD0-1653F038D112}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BA77A6C-2B54-42B0-AAD0-1653F038D112}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A7C2C44-F3D5-416D-ACFF-0583C4EE3298}
+	EndGlobalSection
+EndGlobal
