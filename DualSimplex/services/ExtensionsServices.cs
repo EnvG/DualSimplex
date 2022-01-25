@@ -31,10 +31,10 @@ namespace DualSimplex.services
         /// </summary>
         /// <param name="matrix"></param>
         /// <returns></returns>
-        public static Dictionary<string, double[]> IdentityExpand(this Dictionary<string, double[]> matrix)
+        public static List<double[]> IdentityExpand(this List<double[]> matrix)
         {
             // Количество столбцов матрицы
-            int count = matrix.First().Value.Length;
+            int count = matrix[0].Length;
             for (int i = 0; i < count; i++)
             {
                 List<double> column = new List<double>();
@@ -49,7 +49,7 @@ namespace DualSimplex.services
 
                     column.Add(0);
                 }
-                matrix.Add($"x{matrix.Count + 1}", column.ToArray());
+                matrix.Add(column.ToArray());
             }
 
             return matrix;
@@ -60,9 +60,9 @@ namespace DualSimplex.services
         /// <param name="array"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static int GetIndex<T>(this T[] array, T n)
+        public static int GetIndex<T>(this List<T> array, T n)
         {
-            for (int i = 0;i < array.Length; i++)
+            for (int i = 0;i < array.Count; i++)
             {
                 if (array[i].Equals(n))
                     return i;

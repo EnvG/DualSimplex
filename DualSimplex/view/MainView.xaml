@@ -63,15 +63,15 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate>
               <StackPanel Orientation="Vertical">
-                <TextBlock Text="{Binding Key}"
+                <TextBlock Text="{Binding X, BindingGroupName=x}"
                            Width="40"
                            TextAlignment="Center"
                            Margin="0 0 0 10"
                            Height="20" />
-                <ItemsControl ItemsSource="{Binding Value, BindingGroupName=x}">
+                <ItemsControl ItemsSource="{Binding BindingGroupName=x}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding BindingGroupName=x, StringFormat=N1}"
+                      <TextBlock Text="{Binding BindingGroupName=x, StringFormat=N2}"
                                  Width="40"
                                  Margin="5 0 10 7"
                                  TextAlignment="Center" />

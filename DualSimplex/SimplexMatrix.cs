@@ -11,101 +11,160 @@ namespace DualSimplex
     {
         #region Свойства
         /// <summary>
-        /// Значения из целевой функции
+        /// Шапка таблицы
+        /// </summary>
+        public List<string> Headers { get; set; }
+        /// <summary>
+        /// Таблица
+        /// </summary>
+        private List<string[]> Matrix { get; set; }
+        /// <summary>
+        /// Вектор базисов
+        /// </summary>
+        public List<string> Basis { get; set; }
+        /// <summary>
+        /// Матрица X
+        /// </summary>
+        public List<double[]> X
+        {
+            get
+            {
+                List<double[]> matrixX = new List<double[]>();
+
+                // Получаем матрицу X (от конца первого столбца (базисы) до конца предпоследнего (свободные члены))
+                for (int i = 0; i < this.Matrix.Count - 1; i++)
+                {
+                    double[] x = this.Matrix[i].Select(m => Double.Parse(m)).ToArray();
+                    matrixX.Add(x);
+                }
+
+                return matrixX;
+            }
+        }
+        /// <summary>
+        /// Вектор свободных членов
+        /// </summary>
+        public double[] B
+        {
+            get
+            {
+                return this.Matrix.Last().Select(m => Double.Parse(m)).ToArray();
+            }
+        }
+        /// <summary>
+        /// Коэффициенты при x в целевой функции
         /// </summary>
         public double[] C { get; set; }
-        /// <summary>
-        /// Значения матрицы X
-        /// </summary>
-        public Dictionary<string, double[]> X { get; set; }
-        /// <summary>
-        /// Значения свободных членов
-        /// </summary>
-        public double[] B { get; set; }
-        public string[] Basis { get; set; }
         public double[] Deltas
         {
             get
             {
-                List<double> result = new List<double>();
-
-                foreach (var x in this.X)
+                List<double> deltas = new List<double>();
+                for(int i = 0; i < this.X.Count; i++)
                 {
-                    double delta = 0.0;
-                    int key = Int32.Parse(x.Key.Replace("x", ""));
-                    foreach (string basis in this.Basis)
+                    double delta = 0;
+                    for (int j = 0; j < this.X[i].Length; j++)
                     {
-                        double c = this.C[Int32.Parse(basis.Replace("x", "")) - 1];
-                        for (int i = 0; i < this.X[basis].Length; i++)
-                        {
-                            delta += c * this.X[$"x{key}"][i];
-                        }
-
+                        delta += this.X[i][j] * this.GetC(j);
                     }
-                    result.Add(delta - this.C[key - 1]);
+                    deltas.Add(delta - this.C[i]);
                 }
 
-                return result.ToArray();
+                return deltas.ToArray();
+            }
+        }
+        public bool IsSolved
+        {
+            get
+            {
+                foreach (double delta in this.Deltas)
+                {
+                    if (delta < 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
         }
         #endregion
-        #region Конструкторы
-        public SimplexMatrix(double[] c = null, Dictionary<string, double[]> x = null, double[] b = null)
+        #region Индексаторы
+        public double this [int row, int column]
         {
-            int count = x.First().Value.Length;
-            List<string> basis = new List<string>();
+            get => this.X[column][row];
+            set => this.Matrix[column][row] = value.ToString();
+        }
+        #endregion
+        #region Конструктор
+        public SimplexMatrix(double[] C, List<double[]> X, double[] B, params string[] Headers)
+        {
+            this.Matrix = new List<string[]>();
+            this.Headers = Headers.ToList();
+            this.Basis = new List<string>();
+            this.C = C;
+            this.C = this.C.ZeroExpand(X.Count + X[0].Length);
 
-            // Дополнение матрицы нулями до нужной длины
-            c = c.ZeroExpand(count + x.Count);
-            // Дополнение матрицы единичной матрицей
-            x = x.IdentityExpand();
-            // Заполнение базисов
-            basis.AddRange(Enumerable.Range(count, x.Count - count + 1).Select(n => $"x{n}").ToArray());
+            foreach (int i in Enumerable.Range(X.Count + 1, X[0].Length))
+            {
+                this.Basis.Add($"x{i}");
+            }
 
-            this.C = c;
-            this.X = x;
-            this.B = b;
-            this.Basis = basis.ToArray();
+            X = X.IdentityExpand();
+            
+
+            for (int i = 0; i < X.Count; i++)
+            {
+                this.Matrix.Add(X[i].Select(x => x.ToString()).ToArray());
+            }
+
+            this.Matrix.Add(B.Select(b => b.ToString()).ToArray());
         }
         #endregion
         #region Методы
         /// <summary>
-        /// Получить ключ опорного столбца
+        /// Получить значение коэффициента по индексу в матрице, которые соответствует нужному базису
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        private double GetC(int i)
+        {
+            int index = Int32.Parse(this.Basis[i].Substring(1)) - 1;
+
+            return this.C[index];
+        }
+        /// <summary>
+        /// Получить индекс разрешающего столбца
         /// </summary>
         /// <returns></returns>
-        public string GetSolveColumnKey()
+        private int GetSolveColumnIndex()
         {
             int index = 0;
-            double min = this.Deltas[0];
+            double min = this.Deltas[index];
 
-            // Поиск минимальной дельты
             for (int i = 1; i < this.Deltas.Length; i++)
             {
                 if (this.Deltas[i] < min)
                 {
                     min = this.Deltas[i];
-                    index = i + 1;
+                    index = i;
                 }
             }
 
-            return $"x{index}";
+            return index;
         }
         /// <summary>
-        /// Получить ключ опорной строки
+        /// Получить индекс разрешающей строки
         /// </summary>
         /// <returns></returns>
-        public string GetSolveRowKey()
+        private int GetSolveRowIndex ()
         {
             int index = 0;
-            // Ключ опорного столбца
-            string solveColumnKey = this.GetSolveColumnKey();
-            double min = this.B[0] / this.X[solveColumnKey][0];
+            int solveColumnIndex = this.GetSolveColumnIndex();
+            double min = this.B[0] / this[0, solveColumnIndex];
 
-            for (int i = 0; i < this.B.Length; i++)
+            for (int i = 1; i < this.B.Length; i++)
             {
-                // Отношение свободного члена к соответствующему элементу опорного столбца
-                double q = this.B[i] / this.X[solveColumnKey][i];
-
+                double q = this.B[i] / this[i, solveColumnIndex];
                 if (q < min)
                 {
                     min = q;
@@ -113,98 +172,54 @@ namespace DualSimplex
                 }
             }
 
-            // Возвращение базиса по найденному индексу
-            return $"{this.Basis[index]}";
+            return index;
         }
         /// <summary>
-        /// Получить опорный элемент
+        /// Получить разрешающий элемент
         /// </summary>
         /// <returns></returns>
-        public double GetSolveElement()
+        private double GetSolveElement()
         {
-            string solveColumnKey = this.GetSolveColumnKey();
-            string solveRowKey = this.GetSolveRowKey();
-            int rowIndex = this.Basis.GetIndex<string>(solveRowKey);
+            int solveRowIndex = this.GetSolveRowIndex();
+            int solveColumnIndex = this.GetSolveColumnIndex();
 
-            return this.X[solveColumnKey][rowIndex];
+            return this[solveRowIndex, solveColumnIndex];
         }
-        /// <summary>
-        /// Перерасчёт матрицы X
-        /// </summary>
-        private void RecalculateX(string solveColumnkey, int solveRow, double solveElement)
+        private void RecalculateB(double solveElement)
         {
-            Dictionary<string, double[]> matrix = new Dictionary<string, double[]>();
+            for (int i = 0; i < this.Matrix.Last().Length; i++)
+            {
+                this.Matrix.Last()[i] = $"{Double.Parse(this.Matrix.Last()[i]) / solveElement}";
+            }
+        }
+        public bool TrySolve()
+        {
+            int solveRowIndex = this.GetSolveRowIndex();
+            int solveColumnIndex = this.GetSolveColumnIndex();
+            // Копия матрицы X
+            List<double[]> x = this.X.Select(n => (double[])n.Clone()).ToList();
             
-            foreach (var x in this.X)
+            // Деление разразрешающей строки на разразрешающий элемент
+            for (int i = 0; i < this.X.Count; i++)
             {
-                matrix.Add(x.Key, x.Value);
+                this[solveRowIndex, i] /= x[solveColumnIndex][solveRowIndex];
             }
 
-            for (int i = 0; i < matrix.Count; i++)
+            // Вычисление матрицы X
+            for (int i = 0; i < this.X.Count; i++)
             {
-                for (int j = 0; j < matrix[$"x{i + 1}"].Length; j++)
+                for (int j = 0; j < this.X[i].Length; j++)
                 {
-                    if (i == solveRow - 1)
+                    if (j != solveRowIndex)
                     {
-                        matrix[$"x{i + 1}"][solveRow] /= solveElement;
-                    }
-                    else
-                    {
-                        matrix[$"x{i + 1}"][j] -= this.X[solveColumnkey][j] / solveElement * this.X[$"x{i + 1}"][this.Basis.GetIndex<string>(solveColumnkey)];
+                        this[j, i] -= x[solveColumnIndex][j] * this[solveRowIndex, i];
                     }
                 }
             }
-            this.X = matrix;
 
-        }
-        private void RecalculateB(string solveColumnKey, int solveRow)
-        {
-            this.B[solveRow] /= this.GetSolveElement();
-            for (int i = 0; i < this.B.Length; i++)
-            {
-                if (i != solveRow)
-                {
-                    this.B[i] -= this.X[solveColumnKey][i] * this.B[solveRow];
-                }
-            }
-        }
-        /// <summary>
-        /// Переназначить значения базиса
-        /// </summary>
-        /// <param name="solveColumnKey"></param>
-        /// <param name="solveRow"></param>
-        private void ResetBasis (string solveColumnKey, int solveRow)
-        {
-            this.Basis[solveRow] = solveColumnKey;
-        }
-        /// <summary>
-        /// Попытаться решить задачу
-        /// </summary>
-        /// <returns></returns>
-        public bool TrySolve ()
-        {
-            string solveColumnKey = this.GetSolveColumnKey();
-            int solveRow = this.Basis.GetIndex<string>(this.GetSolveRowKey());
-            double solveElement = this.GetSolveElement();
-            this.RecalculateB(solveColumnKey, solveRow);
-            this.ResetBasis(solveColumnKey, solveRow);
-            this.RecalculateX(solveColumnKey, solveRow, solveElement);
+            this.RecalculateB(x[solveColumnIndex][solveRowIndex]);
 
-            return this.CheckSolve();
-        }
-        /// <summary>
-        /// Проверить решённость задачи
-        /// </summary>
-        /// <returns></returns>
-        public bool CheckSolve()
-        {
-            foreach (decimal delta in this.Deltas)
-            {
-                if (delta < 0)
-                    return false;
-            }
-
-            return true;
+            return this.IsSolved;
         }
         #endregion
     }

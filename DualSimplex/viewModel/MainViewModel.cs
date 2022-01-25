@@ -33,14 +33,16 @@ namespace DualSimplex.viewModel
         public MainViewModel()
         {
             double[] C = new double[] { 30, 40 };
-            Dictionary<string, double[]> X = new Dictionary<string, double[]>()
+            List<double[]> X = new List<double[]>()
             {
-                { "x1", new double[] { 12, 4, 3, 7 } },
-                { "x2", new double[] { 4, 4, 12, 7 } },
+                new double[] { 12, 4, 3},
+                new double[] { 4, 4, 12},
             };
-            double[] B = new double[] { 300, 120, 252, 7 };
+            double[] B = new double[] { 300, 120, 252};
 
             this.Matrix = new SimplexMatrix(C, X, B);
+            this.Matrix.TrySolve();
+            this.OnPropertyChanged(nameof(this.Matrix));
         }
     }
 }
