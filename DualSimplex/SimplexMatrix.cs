@@ -31,7 +31,7 @@ namespace DualSimplex
 
                 foreach (var x in this.X)
                 {
-                    double delta = 0;
+                    double delta = 0.0;
                     int key = Int32.Parse(x.Key.Replace("x", ""));
                     foreach (string basis in this.Basis)
                     {
